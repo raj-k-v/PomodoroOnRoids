@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
 
 const TEMPLATE = [
   { label: "Pomodoro", mode: "focus" },
@@ -30,8 +31,7 @@ export default function SessionsCard({ mode, time, running, durations }) {
     if (!session) return;
 
     const index = session.steps.findIndex(
-      (step, i) =>
-        !step.done && TEMPLATE[i].mode === mode
+      (step, i) => !step.done && TEMPLATE[i].mode === mode
     );
 
     if (index === -1) return;
@@ -56,8 +56,7 @@ export default function SessionsCard({ mode, time, running, durations }) {
     if (!session) return setActiveStep(-1);
 
     const index = session.steps.findIndex(
-      (step, i) =>
-        !step.done && TEMPLATE[i].mode === mode
+      (step, i) => !step.done && TEMPLATE[i].mode === mode
     );
 
     setActiveStep(index);
@@ -103,17 +102,37 @@ export default function SessionsCard({ mode, time, running, durations }) {
   }
 
   return (
-    <div className="w-[300px] space-y-3">
+    <motion.div
+      initial={{ opacity: 0, x: 20 }}
+      animate={{ opacity: 1, x: 0 }}
+      transition={{ duration: 0.45, ease: "easeOut" }}
+      className="w-[320px] space-y-3"
+    >
+      {/* HEADER TEXT */}
       <div className="px-1">
-        <h2 className="text-sm font-semibold opacity-85">
+        <h2
+          className="text-sm font-semibold"
+          style={{ color: "var(--task-text)" }}
+        >
           Track your study time
         </h2>
-        <p className="text-xs opacity-50">
+        <p className="text-xs opacity-60">
           Sessions update automatically
         </p>
       </div>
 
-      <div className="rounded-2xl backdrop-blur-xl bg-white/8 border border-white/15 shadow-lg overflow-hidden">
+      {/* CARD */}
+      <div
+        className="
+          rounded-2xl
+          backdrop-blur-xl
+          bg-white/8
+          border border-white/15
+          shadow-[0_10px_40px_rgba(0,0,0,0.35)]
+          overflow-hidden
+        "
+      >
+        {/* CARD HEADER */}
         <div className="flex items-center justify-between px-4 py-3">
           <h3 className="text-xs uppercase tracking-widest opacity-70">
             Sessions
@@ -126,14 +145,23 @@ export default function SessionsCard({ mode, time, running, durations }) {
           </button>
         </div>
 
+        {/* BODY */}
         <div className="px-3 pb-3 space-y-3 max-h-[420px] overflow-y-auto">
           {sessions.map((session, sIndex) => (
             <div
               key={session.id}
-              className="rounded-xl bg-white/8 border border-white/15 p-3"
+              className="
+                rounded-xl
+                bg-white/10
+                border border-white/15
+                p-3
+              "
             >
               <div className="flex justify-between items-center mb-2">
-                <span className="font-semibold opacity-80">
+                <span
+                  className="font-semibold"
+                  style={{ color: "var(--task-text)" }}
+                >
                   Session {sIndex + 1}
                 </span>
                 <button
@@ -144,32 +172,40 @@ export default function SessionsCard({ mode, time, running, durations }) {
                 </button>
               </div>
 
-              <div className="space-y-2">
+              <div className="space-y-1.5">
                 {session.steps.map((step, i) => {
                   const active =
                     sIndex === activeSession && i === activeStep;
 
                   return (
-                    <label
+                    <motion.label
                       key={i}
+                      layout
+                      initial={false}
+                      animate={{
+                        backgroundColor: active
+                          ? "rgba(255,255,255,0.15)"
+                          : "rgba(255,255,255,0)"
+                      }}
                       className={`
-                        flex items-center gap-2 px-2 py-1 rounded-md
-                        cursor-pointer transition
-                        ${active ? "bg-white/15" : ""}
+                        flex items-center gap-2
+                        px-2 py-1.5
+                        rounded-md
+                        cursor-pointer
+                        transition
                         ${step.done ? "opacity-40 line-through" : ""}
                       `}
+                      style={{ color: "var(--task-text)" }}
                     >
                       <input
                         type="checkbox"
                         checked={step.done}
-                        onChange={() =>
-                          toggleStep(sIndex, i)
-                        }
+                        onChange={() => toggleStep(sIndex, i)}
                         className="accent-white"
                       />
                       {step.label} ·{" "}
                       {Math.round(step.duration / 60)} min
-                    </label>
+                    </motion.label>
                   );
                 })}
               </div>
@@ -183,6 +219,6 @@ export default function SessionsCard({ mode, time, running, durations }) {
           )}
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
