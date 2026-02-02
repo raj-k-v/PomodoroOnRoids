@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { playComplete } from "../utils/sound";
 
 const DEFAULT_DURATIONS = {
   focus: 25 * 60,
@@ -20,6 +21,9 @@ export function usePomodoro() {
   const [pomodoroCount, setPomodoroCount] = useState(1);
   const [session, setSession] = useState(1);
 
+  /* 🔒 prevent double-complete sound */
+  const playedRef = useRef(false);
+
   /* persist durations */
   useEffect(() => {
     localStorage.setItem("durations", JSON.stringify(durations));
@@ -36,9 +40,15 @@ export function usePomodoro() {
     return () => clearInterval(id);
   }, [running]);
 
-  /* when timer ends */
+  /* 🔔 when timer ends */
   useEffect(() => {
     if (time > 0) return;
+
+    // play completion sound ONCE
+    if (!playedRef.current) {
+      playComplete();
+      playedRef.current = true;
+    }
 
     setRunning(false);
 
@@ -63,9 +73,11 @@ export function usePomodoro() {
   useEffect(() => {
     setTime(durations[mode]);
     setRunning(false);
+    playedRef.current = false; // reset sound lock
   }, [mode, durations]);
 
   function start() {
+    playedRef.current = false;
     setRunning(true);
   }
 
@@ -74,6 +86,7 @@ export function usePomodoro() {
   }
 
   function reset() {
+    playedRef.current = false;
     setRunning(false);
     setTime(durations[mode]);
   }

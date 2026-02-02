@@ -34,6 +34,9 @@ export default function App() {
   const [t, setT] = useState(Number(localStorage.getItem("themeT")) || 0);
   const [focusMode, setFocusMode] = useState(false);
 
+  /* 🔹 SESSION NUMBER (SYNCED WITH SESSIONS CARD) */
+  const [sessionNumber, setSessionNumber] = useState(1);
+
   /* TIMER EDIT */
   const [editing, setEditing] = useState(false);
   const [editMinutes, setEditMinutes] = useState(
@@ -48,9 +51,8 @@ export default function App() {
   useEffect(() => {
     document.documentElement.style.setProperty("--t", t);
 
-    const mainText = t > 0.5
-      ? "rgb(15,23,42)"
-      : "rgb(255,255,255)";
+    const mainText =
+      t > 0.5 ? "rgb(15,23,42)" : "rgb(255,255,255)";
 
     document.documentElement.style.setProperty("--task-text", mainText);
     document.documentElement.style.setProperty("--main-text", mainText);
@@ -98,6 +100,7 @@ export default function App() {
             time={time}
             running={running}
             durations={durations}
+            onSessionChange={setSessionNumber}   
           />
         </aside>
       )}
@@ -117,99 +120,160 @@ export default function App() {
       </div>
 
       {/* CENTER */}
-      <main className="h-screen flex flex-col items-center justify-start pt-32">
+      <main className="h-screen relative z-20">
 
-        {!focusMode && (
-          <div className="mb-8">
-            <ModeTabs mode={mode} switchMode={setMode} />
-          </div>
-        )}
-
+        {/* NORMAL MODE */}
         <AnimatePresence mode="wait">
-          {!focusMode ? (
-            <motion.div key="normal" className="relative mb-10 text-center">
-              <ProgressRing progress={progress} />
-
-              <div
-                className="absolute inset-0 flex flex-col items-center justify-center text-5xl font-semibold"
-                style={{ color: "var(--main-text)" }}
-              >
-                {editing ? (
-                  <input
-                    autoFocus
-                    value={editMinutes}
-                    onChange={e =>
-                      setEditMinutes(e.target.value.replace(/\D/g, ""))
-                    }
-                    onBlur={saveDuration}
-                    onKeyDown={e => e.key === "Enter" && saveDuration()}
-                    className="w-24 bg-transparent outline-none text-center"
-                    style={{ color: "var(--main-text)" }}
-                  />
-                ) : (
-                  <>
-                    {String(Math.floor(time / 60)).padStart(2, "0")}:
-                    {String(time % 60).padStart(2, "0")}
-                    {!running && (
-                      <button
-                        onClick={() => setEditing(true)}
-                        className="mt-2 z-50 text-xs opacity-50 hover:opacity-100"
-                        style={{ color: "var(--main-text)" }}
-                      >
-                        ✎ Edit duration
-                      </button>
-                    )}
-                  </>
-                )}
-              </div>
-            </motion.div>
-          ) : (
+          {!focusMode && (
             <motion.div
-              key="focus"
-              className="text-[5.5rem] font-light tracking-tight"
-              style={{ color: "var(--main-text)" }}
+              key="normal"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.45, ease: "easeOut" }}
+              className="h-full flex flex-col items-center justify-start pt-32"
             >
-              {String(Math.floor(time / 60)).padStart(2, "0")}
-              <span className="opacity-40">:</span>
-              {String(time % 60).padStart(2, "0")}
+              <div className="mb-8">
+                <ModeTabs mode={mode} switchMode={setMode} />
+              </div>
+
+              <motion.div className="relative mb-6 text-center">
+                <ProgressRing progress={progress} />
+
+                <div
+                  className="absolute inset-0 flex flex-col items-center justify-center text-5xl font-semibold"
+                  style={{ color: "var(--main-text)" }}
+                >
+                  {editing ? (
+                    <input
+                      autoFocus
+                      value={editMinutes}
+                      onChange={e =>
+                        setEditMinutes(e.target.value.replace(/\D/g, ""))
+                      }
+                      onBlur={saveDuration}
+                      onKeyDown={e => e.key === "Enter" && saveDuration()}
+                      className="w-24 bg-transparent outline-none text-center"
+                      style={{ color: "var(--main-text)" }}
+                    />
+                  ) : (
+                    <>
+                      {String(Math.floor(time / 60)).padStart(2, "0")}:
+                      {String(time % 60).padStart(2, "0")}
+                      {!running && (
+                        <button
+                          onClick={() => setEditing(true)}
+                          className="mt-2 cursor-pointer text-xs z-50 opacity-50 hover:opacity-100"
+                        >
+                          ✎ Edit duration
+                        </button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </motion.div>
+
+              <div className="flex gap-4 mb-4">
+                {!running ? (
+                  <button
+                    onClick={() => { playClick(); start(); }}
+                    className="glass-btn cursor-pointer w-36 py-4"
+                  >
+                    Start
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => { playClick(); pause(); }}
+                    className="glass-btn cursor-pointer  w-36 py-4"
+                  >
+                    Pause
+                  </button>
+                )}
+                <button
+                  onClick={() => { playClick(); reset(); }}
+                  className="glass-btn cursor-pointer  w-36 py-4 opacity-80"
+                >
+                  Reset
+                </button>
+              </div>
+
+              <button
+                onClick={() => {
+                  playClick();
+                  setFocusMode(true);
+                }}
+                className="glass-btn cursor-pointer  px-8 py-4 text-sm"
+              >
+                Focus Mode
+              </button>
+
+              <p className="opacity-70 mt-3">
+                #{sessionNumber} — Time to focus   {/* ✅ */}
+              </p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        <div className="flex gap-4 mb-4">
-          {!running ? (
-            <button
-              onClick={() => { playClick(); start(); }}
-              className="glass-btn w-36 py-4"
+        {/* FOCUS MODE */}
+        <AnimatePresence>
+          {focusMode && (
+            <motion.div
+              key="focus"
+              initial={{ opacity: 0, scale: 0.96, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.5, ease: "easeOut" }}
+              className="fixed inset-0 z-40 flex flex-col items-center justify-center text-center"
+              style={{ color: "var(--main-text)" }}
             >
-              Start
-            </button>
-          ) : (
-            <button
-              onClick={() => { playClick(); pause(); }}
-              className="glass-btn w-36 py-4"
-            >
-              Pause
-            </button>
+              <div className="text-[6rem] font-light tracking-tight mb-8">
+                {String(Math.floor(time / 60)).padStart(2, "0")}
+                <span className="opacity-40">:</span>
+                {String(time % 60).padStart(2, "0")}
+              </div>
+
+              <div className="flex gap-4 mb-6">
+                {!running ? (
+                  <button
+                    onClick={() => { playClick(); start(); }}
+                    className="glass-btn w-36 py-4 text-lg"
+                  >
+                    Start
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => { playClick(); pause(); }}
+                    className="glass-btn w-36 py-4 text-lg"
+                  >
+                    Pause
+                  </button>
+                )}
+                <button
+                  onClick={() => { playClick(); reset(); }}
+                  className="glass-btn w-36 py-4 text-lg opacity-80"
+                >
+                  Reset
+                </button>
+              </div>
+
+              <motion.button
+                whileTap={{ scale: 0.95 }}
+                onClick={() => {
+                  playClick();
+                  setFocusMode(false);
+                }}
+                className="glass-btn px-8 py-4 text-sm"
+              >
+                Exit Focus Mode
+              </motion.button>
+
+              <p className="opacity-50 mt-4 text-xs tracking-wide">
+                #{sessionNumber} — Deep focus   
+              </p>
+            </motion.div>
           )}
-          <button
-            onClick={() => { playClick(); reset(); }}
-            className="glass-btn w-36 py-4 opacity-80"
-          >
-            Reset
-          </button>
-        </div>
+        </AnimatePresence>
 
-        <button
-          onClick={() => { playClick(); setFocusMode(f => !f); }}
-          className="glass-btn px-6 py-2 text-sm cursor-pointer"
-        >
-          {focusMode ? "Exit Focus Mode" : "Focus Mode"}
-        </button>
-
-        <p className="opacity-70 mt-3">
-          #{session} — Time to focus
-        </p>
       </main>
     </div>
   );

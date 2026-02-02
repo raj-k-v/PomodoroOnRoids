@@ -10,7 +10,13 @@ const TEMPLATE = [
   { label: "Long Break", mode: "long" }
 ];
 
-export default function SessionsCard({ mode, time, running, durations }) {
+export default function SessionsCard({
+  mode,
+  time,
+  running,
+  durations,
+  onSessionChange // 👈 NEW (optional callback)
+}) {
   const [sessions, setSessions] = useState(() => {
     const saved = localStorage.getItem("sessions");
     return saved ? JSON.parse(saved) : [];
@@ -62,6 +68,21 @@ export default function SessionsCard({ mode, time, running, durations }) {
     setActiveStep(index);
   }, [mode, sessions, activeSession]);
 
+  /* 🚀 AUTO ADVANCE SESSION */
+  useEffect(() => {
+    const session = sessions[activeSession];
+    if (!session) return;
+
+    const allDone = session.steps.every(s => s.done);
+
+    if (allDone && activeSession < sessions.length - 1) {
+      const next = activeSession + 1;
+      setActiveSession(next);
+      setActiveStep(-1);
+      onSessionChange?.(next + 1); // 👈 notify App
+    }
+  }, [sessions, activeSession]);
+
   function addSession() {
     setSessions(s => [
       ...s,
@@ -81,6 +102,7 @@ export default function SessionsCard({ mode, time, running, durations }) {
     if (activeSession === index) {
       setActiveSession(0);
       setActiveStep(-1);
+      onSessionChange?.(1);
     }
   }
 
@@ -122,17 +144,8 @@ export default function SessionsCard({ mode, time, running, durations }) {
       </div>
 
       {/* CARD */}
-      <div
-        className="
-          rounded-2xl
-          backdrop-blur-xl
-          bg-white/8
-          border border-white/15
-          shadow-[0_10px_40px_rgba(0,0,0,0.35)]
-          overflow-hidden
-        "
-      >
-        {/* CARD HEADER */}
+      <div className="rounded-2xl backdrop-blur-xl bg-white/8 border border-white/15 shadow-[0_10px_40px_rgba(0,0,0,0.35)] overflow-hidden">
+        {/* HEADER */}
         <div className="flex items-center justify-between px-4 py-3">
           <h3 className="text-xs uppercase tracking-widest opacity-70">
             Sessions
@@ -147,70 +160,71 @@ export default function SessionsCard({ mode, time, running, durations }) {
 
         {/* BODY */}
         <div className="px-3 pb-3 space-y-3 max-h-[420px] overflow-y-auto">
-          {sessions.map((session, sIndex) => (
-            <div
-              key={session.id}
-              className="
-                rounded-xl
-                bg-white/10
-                border border-white/15
-                p-3
-              "
-            >
-              <div className="flex justify-between items-center mb-2">
-                <span
-                  className="font-semibold"
-                  style={{ color: "var(--task-text)" }}
-                >
-                  Session {sIndex + 1}
-                </span>
-                <button
-                  onClick={() => deleteSession(sIndex)}
-                  className="text-xs text-red-400 hover:text-red-300"
-                >
-                  Delete
-                </button>
-              </div>
+          {sessions.map((session, sIndex) => {
+            const completed = session.steps.every(s => s.done);
 
-              <div className="space-y-1.5">
-                {session.steps.map((step, i) => {
-                  const active =
-                    sIndex === activeSession && i === activeStep;
+            return (
+              <motion.div
+                key={session.id}
+                animate={{
+                  backgroundColor: completed
+                    ? "rgba(255,90,90,0.12)"
+                    : "rgba(255,255,255,0.08)",
+                  borderColor: completed
+                    ? "rgba(255,90,90,0.25)"
+                    : "rgba(255,255,255,0.15)"
+                }}
+                className="rounded-xl border p-3 transition-colors"
+              >
+                <div className="flex justify-between items-center mb-2">
+                  <span
+                    className="font-semibold"
+                    style={{ color: "var(--task-text)" }}
+                  >
+                    Session {sIndex + 1}
+                  </span>
+                  <button
+                    onClick={() => deleteSession(sIndex)}
+                    className="text-xs text-red-400 hover:text-red-300"
+                  >
+                    Delete
+                  </button>
+                </div>
 
-                  return (
-                    <motion.label
-                      key={i}
-                      layout
-                      initial={false}
-                      animate={{
-                        backgroundColor: active
-                          ? "rgba(255,255,255,0.15)"
-                          : "rgba(255,255,255,0)"
-                      }}
-                      className={`
-                        flex items-center gap-2
-                        px-2 py-1.5
-                        rounded-md
-                        cursor-pointer
-                        transition
-                        ${step.done ? "opacity-40 line-through" : ""}
-                      `}
-                      style={{ color: "var(--task-text)" }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={step.done}
-                        onChange={() => toggleStep(sIndex, i)}
-                        className="accent-white"
-                      />
-                      {step.label} ·{" "}
-                      {Math.round(step.duration / 60)} min
-                    </motion.label>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
+                <div className="space-y-1.5">
+                  {session.steps.map((step, i) => {
+                    const active =
+                      sIndex === activeSession && i === activeStep;
+
+                    return (
+                      <motion.label
+                        key={i}
+                        layout
+                        animate={{
+                          backgroundColor: active
+                            ? "rgba(255,255,255,0.15)"
+                            : "transparent"
+                        }}
+                        className={`flex items-center gap-2 px-2 py-1.5 rounded-md cursor-pointer ${
+                          step.done ? "opacity-40 line-through" : ""
+                        }`}
+                        style={{ color: "var(--task-text)" }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={step.done}
+                          onChange={() => toggleStep(sIndex, i)}
+                          className="accent-white"
+                        />
+                        {step.label} ·{" "}
+                        {Math.round(step.duration / 60)} min
+                      </motion.label>
+                    );
+                  })}
+                </div>
+              </motion.div>
+            );
+          })}
 
           {sessions.length === 0 && (
             <div className="opacity-50 italic px-1">

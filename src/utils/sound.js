@@ -33,7 +33,7 @@ function getCtx() {
 }
 
 /* ===============================
-   MASTER VOLUME (slider)
+   MASTER VOLUME
    =============================== */
 export function setVolume(v) {
   volume = v;
@@ -53,7 +53,7 @@ export function getVolume() {
 }
 
 /* ===============================
-   UI CLICK VOLUME
+   UI VOLUME
    =============================== */
 export function setUIVolume(v) {
   uiVolume = v;
@@ -104,7 +104,7 @@ export function isMuted() {
 }
 
 /* ===============================
-   CLICK (BASSY + HAPTIC)
+   CLICK
    =============================== */
 export function playClick() {
   if (muted) return;
@@ -112,7 +112,6 @@ export function playClick() {
   const ctx = getCtx();
   const now = ctx.currentTime;
 
-  /* LOW THUD */
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
 
@@ -126,57 +125,42 @@ export function playClick() {
   osc.connect(gain).connect(uiGain);
   osc.start(now);
   osc.stop(now + 0.06);
-
-  /* HAPTIC NOISE SNAP */
-  const buffer = ctx.createBuffer(1, ctx.sampleRate * 0.02, ctx.sampleRate);
-  const data = buffer.getChannelData(0);
-
-  for (let i = 0; i < data.length; i++) {
-    data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
-  }
-
-  const noise = ctx.createBufferSource();
-  noise.buffer = buffer;
-
-  const noiseGain = ctx.createGain();
-  noiseGain.gain.setValueAtTime(uiVolume * 0.18, now);
-  noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.04);
-
-  const filter = ctx.createBiquadFilter();
-  filter.type = "lowpass";
-  filter.frequency.value = 600;
-
-  noise.connect(filter).connect(noiseGain).connect(uiGain);
-  noise.start(now);
-  noise.stop(now + 0.05);
 }
 
 /* ===============================
-   COMPLETION CHIME
+   ✅ COMPLETION CHIME (SUBTLE)
    =============================== */
 export function playComplete() {
   if (muted) return;
 
   const ctx = getCtx();
-  const osc = ctx.createOscillator();
+  const now = ctx.currentTime;
+
   const gain = ctx.createGain();
-
-  osc.type = "sine";
-  osc.frequency.setValueAtTime(880, ctx.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(
-    1320,
-    ctx.currentTime + 0.25
-  );
-
-  gain.gain.setValueAtTime(uiVolume * 0.25, ctx.currentTime);
+  gain.gain.setValueAtTime(0.0001, now);
   gain.gain.exponentialRampToValueAtTime(
-    0.001,
-    ctx.currentTime + 0.35
+    uiVolume * 0.12,
+    now + 0.05
+  );
+  gain.gain.exponentialRampToValueAtTime(
+    0.0001,
+    now + 0.9
   );
 
-  osc.connect(gain).connect(uiGain);
-  osc.start();
-  osc.stop(ctx.currentTime + 0.35);
+  // soft bell tones
+  const freqs = [523.25, 783.99]; // C5 + G5
+
+  freqs.forEach((f, i) => {
+    const osc = ctx.createOscillator();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(f, now);
+
+    osc.connect(gain);
+    osc.start(now + i * 0.03);
+    osc.stop(now + 1);
+  });
+
+  gain.connect(uiGain);
 }
 
 /* ===============================
