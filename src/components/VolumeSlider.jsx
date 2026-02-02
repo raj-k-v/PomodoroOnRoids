@@ -1,20 +1,28 @@
 import { useEffect, useRef, useState } from "react";
-import { getVolume, setVolume } from "../utils/sound";
+import {
+  getVolume,
+  setVolume,
+  toggleMute,
+  isMuted
+} from "../utils/sound";
 
 export default function VolumeSlider() {
   const [volume, setVol] = useState(getVolume());
+  const [muted, setMuted] = useState(isMuted());
   const lastVolume = useRef(volume || 0.6);
 
   useEffect(() => {
     setVolume(volume);
   }, [volume]);
 
-  function toggleMute() {
-    if (volume === 0) {
-      setVol(lastVolume.current || 0.6);
-    } else {
+  function handleMute() {
+    toggleMute();
+    setMuted(m => !m);
+
+    if (!muted) {
       lastVolume.current = volume;
-      setVol(0);
+    } else {
+      setVol(lastVolume.current || 0.6);
     }
   }
 
@@ -22,7 +30,7 @@ export default function VolumeSlider() {
     <div className="glass-btn flex items-center gap-3 h-10 px-4">
       {/* Speaker */}
       <button
-        onClick={toggleMute}
+        onClick={handleMute}
         className="cursor-pointer text-white/70 hover:text-white transition"
       >
         <svg
@@ -35,7 +43,7 @@ export default function VolumeSlider() {
           strokeLinejoin="round"
         >
           <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-          {volume === 0 ? (
+          {muted || volume === 0 ? (
             <>
               <line x1="23" y1="9" x2="17" y2="15" />
               <line x1="17" y1="9" x2="23" y2="15" />
@@ -55,10 +63,10 @@ export default function VolumeSlider() {
         min="0"
         max="1"
         step="0.01"
-        value={volume}
+        value={muted ? 0 : volume}
         onChange={e => setVol(Number(e.target.value))}
-        className="volume-slider w-[180px]"
-        style={{ "--fill": `${volume * 100}%` }}
+        className="volume-slider w-[150px]"
+        style={{ "--fill": `${(muted ? 0 : volume) * 100}%` }}
       />
     </div>
   );

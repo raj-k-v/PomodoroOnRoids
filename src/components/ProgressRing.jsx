@@ -5,15 +5,34 @@ export default function ProgressRing({ progress }) {
   const stroke = 10;
   const normalizedRadius = radius - stroke / 2;
   const circumference = normalizedRadius * 2 * Math.PI;
-
   const offset = circumference * (1 - progress);
 
   return (
     <div className="relative w-[260px] h-[260px]">
+
+      {/* OUTER BREATHING GLOW — REFINED */}
+<motion.div
+  aria-hidden
+  className="absolute inset-[-7px] rounded-full pointer-events-none"
+  animate={{
+    boxShadow: [
+      "0 0 0px rgba(124,124,255,0)",
+      "0 0 20px rgba(124,124,255,0.22)",
+      "0 0 0px rgba(124,124,255,0)"
+    ]
+  }}
+  transition={{
+    duration: 5,
+    ease: "easeInOut",
+    repeat: Infinity
+  }}
+/>
+
+      {/* SVG RING */}
       <svg
         width="260"
         height="260"
-        className="rotate-[-90deg]"
+        className="rotate-[-90deg] relative z-10"
       >
         {/* TRACK */}
         <circle
@@ -37,16 +56,16 @@ export default function ProgressRing({ progress }) {
           strokeDasharray={circumference}
           strokeDashoffset={offset}
           animate={{
+            strokeDashoffset: offset,
             strokeWidth: progress > 0.92 ? 6 : stroke
           }}
           transition={{
+            strokeDashoffset: { duration: 0.4, ease: "easeOut" },
             strokeWidth: { duration: 0.4, ease: "easeOut" }
           }}
         />
-      </svg>
 
-      {/* GRADIENT */}
-      <svg width="0" height="0">
+        {/* GRADIENT */}
         <defs>
           <linearGradient
             id="ringGradient"
@@ -56,7 +75,6 @@ export default function ProgressRing({ progress }) {
             x2="260"
             y2="260"
           >
-            {/* Cool → Warm mapped to --t */}
             <stop
               offset="0%"
               stopColor={`color-mix(
@@ -76,23 +94,6 @@ export default function ProgressRing({ progress }) {
           </linearGradient>
         </defs>
       </svg>
-
-      {/* BREATHING GLOW */}
-      <motion.div
-        className="absolute inset-0 rounded-full"
-        animate={{
-          boxShadow: [
-            "0 0 0 rgba(0,0,0,0)",
-            "0 0 40px rgba(124,124,255,0.35)",
-            "0 0 0 rgba(0,0,0,0)"
-          ]
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: "easeInOut"
-        }}
-      />
     </div>
   );
 }

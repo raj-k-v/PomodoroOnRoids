@@ -301,3 +301,30 @@ body::after {
 .volume-slider::-webkit-slider-thumb:hover {
   transform: scale(1.1);
 }
+/* ===============================
+   PROGRESS RING STABILITY FIX
+   =============================== */
+
+/* Prevent abrupt fade when parent animates */
+.progress-ring,
+.progress-ring svg {
+  opacity: 1;
+  transition:
+    opacity 0.35s ease,
+    stroke-dashoffset 0.4s ease,
+    stroke-width 0.35s ease;
+  will-change: opacity, stroke-dashoffset, stroke-width;
+}
+
+/* Ensure SVG does not visually "snap" during motion */
+.progress-ring svg {
+  isolation: isolate;
+}
+
+/* Smooth ring exit during focus mode transitions */
+.progress-ring circle {
+  transition:
+    stroke-dashoffset 0.4s ease,
+    stroke-width 0.35s ease,
+    stroke 0.35s ease;
+}
